@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hoja de Control de Contraste</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f0f4f8;
+      --card-bg: #ffffff;
+      --primary: #5c6ac4;
+      --accent: #7c3aed;
+      --text: #1e293b;
+      --shadow: rgba(0,0,0,0.08);
+      --radius: 12px;
+      --transition: 0.3s ease;
+    }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .header {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:20px;
+    }
+    h1 { font-size:1.75rem; font-weight:600; }
+    button.export-btn {
+      background:var(--primary); color:#fff; border:none;
+      padding:10px 20px; border-radius:var(--radius);
+      cursor:pointer; font-size:1rem; font-weight:600;
+      transition:background var(--transition),transform var(--transition);
+      box-shadow:0 4px 12px var(--shadow);
+    }
+    button.export-btn:hover { background:var(--accent); transform:translateY(-2px); }
+    .viewer-section {
+      display:grid;
+      grid-template-columns:2fr 1fr;
+      gap:20px;
+      padding:0 20px;
+    }
+    .viewer-card, .marker-list-card {
+      background:var(--card-bg);
+      border-radius:var(--radius);
+      box-shadow:0 4px 12px var(--shadow);
+      position:relative;
+      overflow:hidden;
+      height:400px;
+      display:flex;
+      flex-direction:column;
+    }
+    .viewer-card { align-items:center; justify-content:center; }
+    .marker-list-card { padding:20px; overflow-y:auto; }
+    .upload-box {
+      position:absolute; top:0; left:0;
+      width:100%; height:100%; cursor:crosshair;
+    }
+    .upload-box label {
+      position:absolute; top:10px; left:10px;
+      background:var(--primary); color:#fff;
+      padding:8px 16px; border-radius:6px;
+      font-weight:600; cursor:pointer;
+      transition:background var(--transition);
+      z-index:2;
+    }
+    .upload-box label:hover { background:var(--accent); }
+    #preview {
+      width:100%; height:100%; object-fit:contain;
+      display:none; transition:opacity var(--transition);
+    }
+    .marker {
+      position:absolute; width:28px; height:28px;
+      background:var(--accent); color:#fff;
+      border-radius:50%; display:flex;
+      align-items:center; justify-content:center;
+      font-size:0.9rem; pointer-events:none;
+      transform:scale(0); transition:transform var(--transition);
+      z-index:3;
+    }
+    .marker.show { transform:scale(1); }
+    .marker-list-card h2 { font-size:1.25rem; margin-bottom:12px; }
+    .marker-item { display:flex; align-items:center; margin-bottom:10px; }
+    .marker-item button {
+      background:none; border:none; color:#ef4444;
+      font-size:1.2rem; cursor:pointer; margin-right:8px;
+      transition:color var(--transition);
+    }
+    .marker-item button:hover { color:#b91c1c; }
+    .marker-item input {
+      flex:1; margin:0 4px;
+      padding:6px 8px; border:1px solid #d1d5db;
+      border-radius:4px; transition:border-color var(--transition);
+    }
+    .marker-item input:focus { outline:none; border-color:var(--primary); }
+    #tablas-card {
+      grid-column:1 / -1;
+      background:var(--card-bg);
+      border-radius:var(--radius);
+      box-shadow:0 4px 12px var(--shadow);
+      padding:20px;
+      overflow-y:auto;
+      max-height:400px;
+      display:flex;
+      flex-direction:column;
+    }
+    #tablas-card h2 { font-size:1.25rem; margin-bottom:12px; }
+    #tablas-card #resultado { margin-bottom:12px; }
+    .param-table {
+      width:100%; border-collapse:collapse; margin-bottom:16px;
+    }
+    .param-table th, .param-table td {
+      padding:8px; text-align:center;
+      border:1px solid #e5e7eb;
+      transition:background var(--transition),color var(--transition);
+    }
+    .param-table th {
+      background:var(--primary); color:#fff; font-weight:600;
+    }
+    .param-table td:hover { background:#e0e7ff; }
+    .param-table td.selected { background:var(--primary); color:#fff; }
+    .param-table td.range { background:#d1fae5; }
+    @media(max-width:768px) {
+      .viewer-section { grid-template-columns:1fr; }
+      .viewer-card, .marker-list-card { height:300px; }
+      #tablas-card { height:auto; max-height:none; }
+    }
+      .viewer-card, .marker-list-card { height:300px; }
+      #tablas-card { max-height:none; height:auto; }
+    }
+      .viewer-card, .marker-list-card, #tablas-card { height:auto; max-height:none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="capture">
+    <div class="header">
+      <h1>Hoja de Control de Contraste</h1>
+      <button class="export-btn" id="exportBtn">Grabar y Exportar JPG</button>
+    </div>
+    <div class="viewer-section">
+      <div class="viewer-card">
+        <div class="upload-box">
+          <input type="file" id="fileInput" accept="image/*">
+          <label for="fileInput">Subir Imagen</label>
+          <img id="preview" alt="Vista previa">
+        </div>
+      </div>
+      <div class="marker-list-card" id="marker-list">
+        <h2>Marcadores</h2>
+        <p>Haz clic en la imagen para añadir.</p>
+      </div>
+      <div id="tablas-card">
+        <h2>Selección de Parámetros</h2>
+        <div id="resultado">Seleccione dos valores para ver pasos.</div>
+        <div id="param-container"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script>
+    // Export
+    document.getElementById('exportBtn').addEventListener('click', () => {
+      html2canvas(document.getElementById('capture'), { useCORS:true }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = 'hoja_control_contraste.jpg';
+        link.href = canvas.toDataURL('image/jpeg',0.9);
+        link.click();
+      });
+    });
+
+    // Image & markers
+    const fileInput = document.getElementById('fileInput'),
+          preview   = document.getElementById('preview'),
+          uploadBox = document.querySelector('.upload-box');
+    let markerCount = 0, markers = [];
+    fileInput.addEventListener('change', function() {
+      preview.src = URL.createObjectURL(this.files[0]);
+      preview.style.display = 'block';
+    });
+    preview.addEventListener('click', e => {
+      const r = preview.getBoundingClientRect(), x = (e.clientX-r.left)/r.width, y = (e.clientY-r.top)/r.height;
+      markerCount++;
+      const m = document.createElement('div'); m.className='marker'; m.innerText=markerCount; m.dataset.id=markerCount;
+      m.style.left=`calc(${x*100}% - 14px)`; m.style.top=`calc(${y*100}% - 14px)`;
+      uploadBox.appendChild(m); setTimeout(()=>m.classList.add('show'),0);
+      markers.push({id:markerCount}); updateList();
+    });
+    function updateList(){
+      const list = document.getElementById('marker-list');
+      let html = '<h2>Marcadores</h2>' + (markers.length ? '' : '<p>Sin marcadores.</p>');
+      markers.forEach(m => {
+        html += `<div class="marker-item"><button data-id="${m.id}">×</button>` +
+                `<span>${m.id}.</span><input id="shutter-${m.id}" placeholder="Shutter">` +
+                `<input id="fstop-${m.id}" placeholder="Fstop"></div>`;
+      });
+      list.innerHTML = html;
+      list.querySelectorAll('button').forEach(btn => btn.onclick = () => {
+        const id = +btn.dataset.id;
+        markers = markers.filter(x => x.id !== id);
+        uploadBox.querySelectorAll('.marker').forEach(el => +el.dataset.id === id && el.remove());
+        updateList();
+      });
+    }
+
+    // Tables selection per category
+    const categorias = {
+      ZONA:   [-1,0,1,2,3,4,5,6,7,8,9,10,11],
+      Shutter:["30","25","20","15","13","10","8","6","5","4","3.2","2.5","2","1.6","1.3","1","0.8","0.6","1/2","1/2.5","1/3.2","1/4","1/5","1/6.3","1/8","1/10","1/13","1/15","1/20","1/25","1/30","1/40","1/50","1/60","1/80","1/100","1/125","1/160","1/200","1/250","1/320","1/400","1/500","1/640","1/800","1/1000","1/1250","1/1600","1/2000","1/2500","1/3200","1/4000"],
+      Fstop: ["1.0","1.1","1.3","1.4","1.6","1.8","2.0","2.2","2.5","2.8","3.2","3.6","4.0","4.5","5.0","5.7","6.3","7.1","8.0","9.0","10.1","11.3","12.7","14.3","16.0","18.0","20.2","22.6","25.4","28.5","32.0","36.0","40.3","45.3","50.8","57.0","64.0"],
+      ISO:   ["50","100","200","400","800","1600","3200","6400","12800","25600","51200","102400"]
+    };
+    const paramContainer = document.getElementById('param-container');
+    let sel = [], curr = null;
+    for (let cat in categorias) {
+      const table = document.createElement('table');
+      table.className = 'param-table';
+      // Header row
+      const hdr = document.createElement('tr');
+      const th = document.createElement('th'); th.colSpan = categorias[cat].length + 1; th.innerText = cat;
+      hdr.appendChild(th);
+      table.appendChild(hdr);
+      // Values row
+      const row = document.createElement('tr');
+      row.appendChild(document.createElement('td'));
+      categorias[cat].forEach((v,i) => {
+        const td = document.createElement('td');
+        td.innerText = v;
+        td.dataset.i = i;
+        td.dataset.c = cat;
+        td.addEventListener('click', () => {
+          const tbl = td.closest('table');
+          if (curr !== cat || sel.length === 2) {
+            tbl.querySelectorAll('td').forEach(x => x.classList.remove('selected','range'));
+            sel = [];
+          }
+          td.classList.add('selected');
+          sel.push(i);
+          curr = cat;
+          if (sel.length === 2) {
+            const d = Math.abs(sel[1] - sel[0]);
+            const f = Math.floor(d/3), e = d%3;
+            let msg = '';
+            if (f) msg += `<strong style='color:red;'>${f} paso(s)</strong>`;
+            if (e) msg += (f ? ' y ' : '') + `<strong style='color:green;'>${e} tercio(s)</strong>`;
+            document.getElementById('resultado').innerHTML = `Hay ${msg} entre ${cat} ${categorias[cat][sel[0]]} y ${categorias[cat][sel[1]]}.`;
+            const mn = Math.min(...sel), mx = Math.max(...sel);
+            tbl.querySelectorAll('td').forEach(x => { const idx2 = +x.dataset.i; if (idx2>mn&&idx2<mx) x.classList.add('range'); });
+          }
+        });
+        row.appendChild(td);
+      });
+      table.appendChild(row);
+      paramContainer.appendChild(table);
+    }
+  </script>
+</body>
+</html>
